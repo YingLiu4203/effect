@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
-  Image,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -14,11 +13,12 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const abortController = new AbortController();
-  const signal = abortController.signal;
-
   useEffect(
     () => {
+      const abortController = new AbortController();
+      const signal = abortController.signal;
+
+      console.log(`loading page: ${page}`);
       setLoading(true);
       const apiURL = `http://jsonplaceholder.typicode.com/todos?_limit=10&_page=${page}`;
 
@@ -27,11 +27,12 @@ export default function App() {
         .then((resJson) => {
           setData(data.concat(resJson));
           setLoading(false);
-        });
+        })
+        .catch((error) => console.log(error.message));
 
-      // cancel function
+      // cancel function, called the the previous component is destroyed
       return () => {
-        console.log("Aborting fetch");
+        console.log(`Aborting fetch ${page}`);
         abortController.abort();
       };
     },
@@ -49,14 +50,12 @@ export default function App() {
   }
 
   function renderFooter() {
-    if (!loading) {
-      return null;
-    }
-
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" />
-      </View>
+      { loading } && (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" />
+        </View>
+      )
     );
   }
 
@@ -70,7 +69,7 @@ export default function App() {
         style={styles.list}
         data={data}
         renderItem={renderItem}
-        renderFooter={renderFooter}
+        ListFooterComponent={renderFooter()}
         keyExtractor={(_, index) => index.toString()}
         // Called when all rows have been rendered and the list has been scrolled to within onEndReachedThreshold of the bottom.
         onEndReached={handleLoadMore}
